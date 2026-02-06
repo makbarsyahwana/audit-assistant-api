@@ -1,0 +1,100 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  role      Role     @default(AUDITOR)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  engagementMembers EngagementMember[]
+  queryLogs         QueryLog[]
+
+  @@map("users")
+}
+
+enum Role {
+  ADMIN
+  AUDIT_MANAGER
+  AUDITOR
+  VIEWER
+}
+
+model Engagement {
+  id        String           @id @default(uuid())
+  name      String
+  status    EngagementStatus @default(ACTIVE)
+  entityId  String?          @map("entity_id")
+  createdAt DateTime         @default(now()) @map("created_at")
+  updatedAt DateTime         @updatedAt @map("updated_at")
+
+  members   EngagementMember[]
+  queryLogs QueryLog[]
+
+  @@map("engagements")
+}
+
+enum EngagementStatus {
+  PLANNING
+  ACTIVE
+  CLOSED
+  ARCHIVED
+}
+
+model EngagementMember {
+  id           String     @id @default(uuid())
+  userId       String     @map("user_id")
+  engagementId String     @map("engagement_id")
+  role         Role       @default(AUDITOR)
+  joinedAt     DateTime   @default(now()) @map("joined_at")
+
+  user       User       @relation(fields: [userId], references: [id])
+  engagement Engagement @relation(fields: [engagementId], references: [id])
+
+  @@unique([userId, engagementId])
+  @@map("engagement_members")
+}
+
+model QueryLog {
+  id             String   @id @default(uuid())
+  userId         String   @map("user_id")
+  engagementId   String   @map("engagement_id")
+  queryText      String   @map("query_text")
+  retrievalMode  String?  @map("retrieval_mode")
+  responseText   String?  @map("response_text")
+  latencyMs      Int?     @map("latency_ms")
+  runId          String?  @map("run_id")
+  agentGraph     String?  @map("agent_graph")
+  agentSteps     Json?    @map("agent_steps")
+  confidence     Float?
+  explanation    String?
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  user           User       @relation(fields: [userId], references: [id])
+  engagement     Engagement @relation(fields: [engagementId], references: [id])
+  retrievalEvents RetrievalEvent[]
+
+  @@map("query_logs")
+}
+
+model RetrievalEvent {
+  id             String   @id @default(uuid())
+  queryLogId     String   @map("query_log_id")
+  chunkId        String   @map("chunk_id")
+  documentId     String   @map("document_id")
+  score          Float
+  retrievalType  String   @map("retrieval_type")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  queryLog QueryLog @relation(fields: [queryLogId], references: [id])
+
+  @@map("retrieval_events")
+}
