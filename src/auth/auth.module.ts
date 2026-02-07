@@ -4,7 +4,11 @@ import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
+import { SsoController } from './sso.controller';
+import { SsoService } from './sso.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { OidcStrategy } from './strategies/oidc.strategy';
+import { SamlStrategy } from './strategies/saml.strategy';
 
 @Module({
   imports: [
@@ -23,8 +27,14 @@ import { JwtStrategy } from './strategies/jwt.strategy';
       }),
     }),
   ],
-  controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
-  exports: [AuthService, JwtModule],
+  controllers: [AuthController, SsoController],
+  providers: [
+    AuthService,
+    SsoService,
+    JwtStrategy,
+    OidcStrategy,
+    SamlStrategy,
+  ],
+  exports: [AuthService, SsoService, JwtModule],
 })
 export class AuthModule {}
