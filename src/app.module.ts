@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
-import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
-import { ConfigModule } from '@nestjs/config';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ThrottlerModule } from '@nestjs/throttler';
 import configuration from './config/configuration';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
@@ -17,14 +18,31 @@ import { MappingsModule } from './mappings/mappings.module';
 import { EvidencePacksModule } from './evidence-packs/evidence-packs.module';
 import { WorkpapersModule } from './workpapers/workpapers.module';
 import { FindingsModule } from './findings/findings.module';
+// Phase 3: Security & Production Hardening
+import { GroupsModule } from './groups/groups.module';
+import { SecretsModule } from './secrets/secrets.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { ThrottleBehindAuthGuard } from './common/guards/throttle-behind-auth.guard';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       load: [configuration],
+    }),
+    // Phase 3: Rate limiting
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        throttlers: [
+          {
+            ttl: (config.get<number>('throttle.ttl', 60)) * 1000,
+            limit: config.get<number>('throttle.limit', 60),
+          },
+        ],
+      }),
     }),
     PrismaModule,
     AuthModule,
@@ -42,6 +60,9 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
     EvidencePacksModule,
     WorkpapersModule,
     FindingsModule,
+    // Phase 3: Security & Production Hardening
+    GroupsModule,
+    SecretsModule,
   ],
   providers: [
     {
@@ -51,6 +72,10 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
     {
       provide: APP_INTERCEPTOR,
       useClass: LoggingInterceptor,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ThrottleBehindAuthGuard,
     },
   ],
 })
