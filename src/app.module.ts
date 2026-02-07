@@ -10,6 +10,13 @@ import { EngagementsModule } from './engagements/engagements.module';
 import { RagClientModule } from './rag-client/rag-client.module';
 import { AuditTrailModule } from './audit-trail/audit-trail.module';
 import { ChatModule } from './chat/chat.module';
+import { DocumentsModule } from './documents/documents.module';
+import { RequirementsModule } from './requirements/requirements.module';
+import { ControlsModule } from './controls/controls.module';
+import { MappingsModule } from './mappings/mappings.module';
+import { EvidencePacksModule } from './evidence-packs/evidence-packs.module';
+import { WorkpapersModule } from './workpapers/workpapers.module';
+import { FindingsModule } from './findings/findings.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
@@ -27,6 +34,14 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
     RagClientModule,
     AuditTrailModule,
     ChatModule,
+    // Phase 2: Workflow Modules
+    DocumentsModule,
+    RequirementsModule,
+    ControlsModule,
+    MappingsModule,
+    EvidencePacksModule,
+    WorkpapersModule,
+    FindingsModule,
   ],
   providers: [
     {
