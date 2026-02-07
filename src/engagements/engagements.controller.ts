@@ -12,8 +12,10 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import { EngagementsService } from './engagements.service';
+import { EngagementLifecycleService } from './engagement-lifecycle.service';
 import { CreateEngagementDto } from './dto/create-engagement.dto';
 import { UpdateEngagementDto } from './dto/update-engagement.dto';
+import { TransitionEngagementDto } from './dto/transition-engagement.dto';
 import { AddMemberDto } from './dto/add-member.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -24,7 +26,10 @@ import { Roles } from '../auth/decorators/roles.decorator';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class EngagementsController {
-  constructor(private readonly engagementsService: EngagementsService) {}
+  constructor(
+    private readonly engagementsService: EngagementsService,
+    private readonly lifecycleService: EngagementLifecycleService,
+  ) {}
 
   @Post()
   @Roles(Role.ADMIN, Role.AUDIT_MANAGER)
@@ -71,5 +76,24 @@ export class EngagementsController {
   @ApiOperation({ summary: 'Remove member from engagement' })
   removeMember(@Param('id') id: string, @Param('userId') userId: string) {
     return this.engagementsService.removeMember(id, userId);
+  }
+
+  // ─── Lifecycle endpoints ─────────────────────────────────────────
+
+  @Post(':id/transition')
+  @Roles(Role.ADMIN, Role.AUDIT_MANAGER)
+  @ApiOperation({ summary: 'Transition engagement status (PLANNING→ACTIVE→CLOSED→ARCHIVED)' })
+  transition(
+    @Param('id') id: string,
+    @Body() dto: TransitionEngagementDto,
+    @Request() req: any,
+  ) {
+    return this.lifecycleService.transition(id, dto.targetStatus, req.user.id);
+  }
+
+  @Get(':id/lifecycle')
+  @ApiOperation({ summary: 'Get engagement lifecycle summary and history' })
+  getLifecycleSummary(@Param('id') id: string) {
+    return this.lifecycleService.getLifecycleSummary(id);
   }
 }
