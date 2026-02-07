@@ -18,6 +18,10 @@ model User {
 
   engagementMembers EngagementMember[]
   queryLogs         QueryLog[]
+  documents         Document[]
+  evidencePacks     EvidencePack[]     @relation("EvidencePackCreator")
+  workpapers        Workpaper[]        @relation("WorkpaperCreator")
+  findings          Finding[]          @relation("FindingCreator")
 
   @@map("users")
 }
@@ -37,8 +41,14 @@ model Engagement {
   createdAt DateTime         @default(now()) @map("created_at")
   updatedAt DateTime         @updatedAt @map("updated_at")
 
-  members   EngagementMember[]
-  queryLogs QueryLog[]
+  members        EngagementMember[]
+  queryLogs      QueryLog[]
+  documents      Document[]
+  requirements   Requirement[]
+  controls       Control[]
+  evidencePacks  EvidencePack[]
+  workpapers     Workpaper[]
+  findings       Finding[]
 
   @@map("engagements")
 }
@@ -98,4 +108,257 @@ model RetrievalEvent {
   queryLog QueryLog @relation(fields: [queryLogId], references: [id])
 
   @@map("retrieval_events")
+}
+
+// ─── Phase 2: Workflow Models ───────────────────────────────────────
+
+model Document {
+  id                  String          @id @default(uuid())
+  engagementId        String          @map("engagement_id")
+  title               String
+  docType             DocType         @default(EVIDENCE) @map("doc_type")
+  sourceSystem        String?         @map("source_system")
+  sourceUri           String?         @map("source_uri")
+  mimeType            String?         @map("mime_type")
+  sizeBytes           Int?            @map("size_bytes")
+  framework           String?
+  clauseId            String?         @map("clause_id")
+  controlId           String?         @map("control_id")
+  entityId            String?         @map("entity_id")
+  periodStart         DateTime?       @map("period_start")
+  periodEnd           DateTime?       @map("period_end")
+  confidentiality     Confidentiality @default(INTERNAL)
+  ingestionStatus     IngestionStatus @default(PENDING) @map("ingestion_status")
+  ragDocumentId       String?         @map("rag_document_id")
+  uploadedById        String?         @map("uploaded_by_id")
+  metadata            Json?
+  createdAt           DateTime        @default(now()) @map("created_at")
+  updatedAt           DateTime        @updatedAt @map("updated_at")
+
+  engagement          Engagement       @relation(fields: [engagementId], references: [id])
+  uploadedBy          User?            @relation(fields: [uploadedById], references: [id])
+  evidencePackItems   EvidencePackItem[]
+
+  @@map("documents")
+}
+
+enum DocType {
+  POLICY
+  FRAMEWORK
+  WORKPAPER
+  EVIDENCE
+  REPORT
+  TICKET
+  OTHER
+}
+
+enum Confidentiality {
+  PUBLIC
+  INTERNAL
+  CONFIDENTIAL
+  RESTRICTED
+}
+
+enum IngestionStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model Requirement {
+  id              String   @id @default(uuid())
+  engagementId    String   @map("engagement_id")
+  framework       String
+  clauseId        String   @map("clause_id")
+  title           String
+  description     String?
+  category        String?
+  priority        RequirementPriority @default(MEDIUM)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  engagement      Engagement @relation(fields: [engagementId], references: [id])
+  controlMappings RequirementControlMapping[]
+
+  @@unique([engagementId, framework, clauseId])
+  @@map("requirements")
+}
+
+enum RequirementPriority {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+model Control {
+  id              String   @id @default(uuid())
+  engagementId    String   @map("engagement_id")
+  controlId       String   @map("control_id")
+  title           String
+  description     String?
+  owner           String?
+  frequency       String?
+  controlType     ControlType @default(MANUAL) @map("control_type")
+  status          ControlStatus @default(NOT_TESTED) @map("control_status")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  engagement      Engagement @relation(fields: [engagementId], references: [id])
+  requirementMappings RequirementControlMapping[]
+  evidencePackItems   EvidencePackItem[]
+
+  @@unique([engagementId, controlId])
+  @@map("controls")
+}
+
+enum ControlType {
+  MANUAL
+  AUTOMATED
+  IT_DEPENDENT
+}
+
+enum ControlStatus {
+  NOT_TESTED
+  EFFECTIVE
+  INEFFECTIVE
+  NOT_APPLICABLE
+}
+
+model RequirementControlMapping {
+  id              String   @id @default(uuid())
+  requirementId   String   @map("requirement_id")
+  controlId       String   @map("control_id")
+  coverageLevel   CoverageLevel @default(PARTIAL) @map("coverage_level")
+  notes           String?
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  requirement     Requirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+  control         Control     @relation(fields: [controlId], references: [id], onDelete: Cascade)
+
+  @@unique([requirementId, controlId])
+  @@map("requirement_control_mappings")
+}
+
+enum CoverageLevel {
+  FULL
+  PARTIAL
+  NONE
+}
+
+model EvidencePack {
+  id              String   @id @default(uuid())
+  engagementId    String   @map("engagement_id")
+  name            String
+  description     String?
+  status          EvidencePackStatus @default(DRAFT)
+  createdById     String?  @map("created_by_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  engagement      Engagement       @relation(fields: [engagementId], references: [id])
+  createdBy       User?            @relation("EvidencePackCreator", fields: [createdById], references: [id])
+  items           EvidencePackItem[]
+
+  @@map("evidence_packs")
+}
+
+enum EvidencePackStatus {
+  DRAFT
+  IN_REVIEW
+  APPROVED
+  EXPORTED
+}
+
+model EvidencePackItem {
+  id              String   @id @default(uuid())
+  evidencePackId  String   @map("evidence_pack_id")
+  documentId      String   @map("document_id")
+  controlId       String?  @map("control_id")
+  rationale       String?
+  sortOrder       Int      @default(0) @map("sort_order")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  evidencePack    EvidencePack @relation(fields: [evidencePackId], references: [id], onDelete: Cascade)
+  document        Document     @relation(fields: [documentId], references: [id])
+  control         Control?     @relation(fields: [controlId], references: [id])
+
+  @@unique([evidencePackId, documentId])
+  @@map("evidence_pack_items")
+}
+
+model Workpaper {
+  id              String   @id @default(uuid())
+  engagementId    String   @map("engagement_id")
+  title           String
+  templateType    WorkpaperTemplate @default(GENERAL) @map("template_type")
+  criteria        String?
+  condition       String?
+  testing         String?
+  result          String?
+  conclusion      String?
+  draftContent    String?  @map("draft_content")
+  citations       Json?
+  status          WorkpaperStatus @default(DRAFT)
+  createdById     String?  @map("created_by_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  engagement      Engagement @relation(fields: [engagementId], references: [id])
+  createdBy       User?      @relation("WorkpaperCreator", fields: [createdById], references: [id])
+
+  @@map("workpapers")
+}
+
+enum WorkpaperTemplate {
+  GENERAL
+  CRITERIA_CONDITION
+  FINANCIAL_MEMO
+  WALKTHROUGH
+}
+
+enum WorkpaperStatus {
+  DRAFT
+  IN_REVIEW
+  APPROVED
+  FINAL
+}
+
+model Finding {
+  id              String   @id @default(uuid())
+  engagementId    String   @map("engagement_id")
+  title           String
+  criteria        String?
+  condition       String?
+  cause           String?
+  effect          String?
+  recommendation  String?
+  managementResponse String? @map("management_response")
+  severity        FindingSeverity @default(MEDIUM)
+  status          FindingStatus   @default(DRAFT)
+  citations       Json?
+  createdById     String?  @map("created_by_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  engagement      Engagement @relation(fields: [engagementId], references: [id])
+  createdBy       User?      @relation("FindingCreator", fields: [createdById], references: [id])
+
+  @@map("findings")
+}
+
+enum FindingSeverity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+  INFORMATIONAL
+}
+
+enum FindingStatus {
+  DRAFT
+  IN_REVIEW
+  OPEN
+  REMEDIATION
+  CLOSED
 }
