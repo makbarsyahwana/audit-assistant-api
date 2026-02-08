@@ -21,6 +21,10 @@ import { FindingsModule } from './findings/findings.module';
 // Phase 3: Security & Production Hardening
 import { GroupsModule } from './groups/groups.module';
 import { SecretsModule } from './secrets/secrets.module';
+// Phase 3: Observability
+import { HealthModule } from './health/health.module';
+import { MetricsModule } from './common/metrics/metrics.module';
+import { TracingModule } from './common/tracing/tracing.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { ThrottleBehindAuthGuard } from './common/guards/throttle-behind-auth.guard';
@@ -63,6 +67,10 @@ import { ThrottleBehindAuthGuard } from './common/guards/throttle-behind-auth.gu
     // Phase 3: Security & Production Hardening
     GroupsModule,
     SecretsModule,
+    // Phase 3: Observability
+    HealthModule,
+    MetricsModule,
+    TracingModule,
   ],
   providers: [
     {
