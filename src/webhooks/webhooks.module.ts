@@ -1,0 +1,12 @@
+import { Module, Global } from '@nestjs/common';
+import { WebhooksController } from './webhooks.controller';
+import { WebhooksService } from './webhooks.service';
+import { PrismaService } from '../prisma/prisma.service';
+
+@Global()
+@Module({
+  controllers: [WebhooksController],
+  providers: [WebhooksService, PrismaService],
+  exports: [WebhooksService],
+})
+export class WebhooksModule {}

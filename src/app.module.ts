@@ -25,6 +25,9 @@ import { SecretsModule } from './secrets/secrets.module';
 import { HealthModule } from './health/health.module';
 import { MetricsModule } from './common/metrics/metrics.module';
 import { TracingModule } from './common/tracing/tracing.module';
+// Phase 4: Integrations & Exports
+import { ExportsModule } from './exports/exports.module';
+import { WebhooksModule } from './webhooks/webhooks.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { ThrottleBehindAuthGuard } from './common/guards/throttle-behind-auth.guard';
@@ -71,6 +74,9 @@ import { ThrottleBehindAuthGuard } from './common/guards/throttle-behind-auth.gu
     HealthModule,
     MetricsModule,
     TracingModule,
+    // Phase 4: Integrations & Exports
+    ExportsModule,
+    WebhooksModule,
   ],
   providers: [
     {
