@@ -5,6 +5,7 @@ import { HumanMessage } from '@langchain/core/messages';
 import { buildAuditQueryGraph } from '../agents/audit-query.graph';
 import { getCheckpointer } from '../memory/checkpointer';
 import { getMemoryStore } from '../memory/store';
+import { applyMessageTrimming } from '../memory/trimming';
 import { PolicyService } from '../policy/policy.service';
 import { RagClientService } from '../rag-client/rag-client.service';
 import { AuditTrailService } from '../audit-trail/audit-trail.service';
@@ -74,9 +75,11 @@ export class ChatService {
       `Invoking AuditQueryGraph: runId=${runId}, threadId=${threadId}`,
     );
 
+    const inputMessages = [new HumanMessage(dto.query)];
+
     const result = await compiledGraph.invoke(
       {
-        messages: [new HumanMessage(dto.query)],
+        messages: inputMessages,
         query: dto.query,
         userId: user.id,
         engagementId: dto.engagementId,
@@ -90,6 +93,19 @@ export class ChatService {
         },
       },
     );
+
+    // 5b. Apply message trimming to keep conversation manageable
+    if (result.messages && result.messages.length > 0) {
+      const { trimmed, originalCount, finalCount } = applyMessageTrimming(
+        result.messages,
+        { maxTurns: 20, maxTokens: 8000 },
+      );
+      if (trimmed) {
+        this.logger.log(
+          `Trimmed conversation: ${originalCount} → ${finalCount} messages (thread=${threadId})`,
+        );
+      }
+    }
 
     // 6. Build response
     return {
