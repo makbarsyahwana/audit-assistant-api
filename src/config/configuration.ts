@@ -27,6 +27,25 @@ export default () => ({
     apiKey: process.env.OPENAI_API_KEY,
   },
 
+  // Model tier routing (🟢 small / 🟡 mid / 🔴 frontier)
+  modelTiers: {
+    small: {
+      modelName: process.env.SMALL_MODEL_NAME || 'gpt-4o-mini',
+      baseUrl: process.env.SMALL_MODEL_BASE_URL || '',
+      apiKey: process.env.SMALL_MODEL_API_KEY || '',
+    },
+    mid: {
+      modelName: process.env.MID_MODEL_NAME || 'gpt-4o-mini',
+      baseUrl: process.env.MID_MODEL_BASE_URL || '',
+      apiKey: process.env.MID_MODEL_API_KEY || '',
+    },
+    frontier: {
+      modelName: process.env.FRONTIER_MODEL_NAME || 'gpt-4o-mini',
+      baseUrl: process.env.FRONTIER_MODEL_BASE_URL || '',
+      apiKey: process.env.FRONTIER_MODEL_API_KEY || '',
+    },
+  },
+
   // Phase 3: SSO / OIDC
   oidc: {
     enabled: process.env.OIDC_ENABLED === 'true',
