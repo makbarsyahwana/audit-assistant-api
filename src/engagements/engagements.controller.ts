@@ -6,10 +6,11 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   UseGuards,
   Request,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import { EngagementsService } from './engagements.service';
 import { EngagementLifecycleService } from './engagement-lifecycle.service';
@@ -39,9 +40,10 @@ export class EngagementsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List engagements (scoped by membership)' })
-  findAll(@Request() req: any) {
-    return this.engagementsService.findAll(req.user.id, req.user.role);
+  @ApiOperation({ summary: 'List engagements (scoped by membership, optional mode filter)' })
+  @ApiQuery({ name: 'mode', required: false, enum: ['AUDIT', 'LEGAL', 'COMPLIANCE'] })
+  findAll(@Request() req: any, @Query('mode') mode?: string) {
+    return this.engagementsService.findAll(req.user.id, req.user.role, mode);
   }
 
   @Get(':id')

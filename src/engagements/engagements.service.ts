@@ -18,15 +18,19 @@ export class EngagementsService {
         name: dto.name,
         entityId: dto.entityId,
         status: dto.status,
+        mode: dto.mode,
       },
       include: { members: true },
     });
   }
 
-  async findAll(userId?: string, userRole?: string) {
+  async findAll(userId?: string, userRole?: string, mode?: string) {
+    const modeFilter = mode ? { mode: mode as any } : {};
+
     // Admins see all engagements
     if (userRole === 'ADMIN') {
       return this.prisma.engagement.findMany({
+        where: { ...modeFilter },
         include: {
           members: {
             include: { user: { select: { id: true, name: true, email: true } } },
@@ -40,6 +44,7 @@ export class EngagementsService {
     return this.prisma.engagement.findMany({
       where: {
         members: { some: { userId } },
+        ...modeFilter,
       },
       include: {
         members: {

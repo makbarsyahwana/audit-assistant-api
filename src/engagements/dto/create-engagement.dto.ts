@@ -1,6 +1,6 @@
 import { IsString, MinLength, IsEnum, IsOptional } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { EngagementStatus } from '@prisma/client';
+import { EngagementStatus, AppMode } from '@prisma/client';
 
 export class CreateEngagementDto {
   @ApiProperty({ example: 'ISO 27001 Audit 2025' })
@@ -17,4 +17,9 @@ export class CreateEngagementDto {
   @IsEnum(EngagementStatus)
   @IsOptional()
   status?: EngagementStatus;
+
+  @ApiPropertyOptional({ enum: AppMode, default: AppMode.AUDIT })
+  @IsEnum(AppMode)
+  @IsOptional()
+  mode?: AppMode;
 }
