@@ -1,4 +1,4 @@
-import { IsString, MinLength, IsOptional, IsUUID } from 'class-validator';
+import { IsString, MinLength, IsOptional, IsUUID, IsIn, IsBoolean } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class QueryDto {
@@ -18,4 +18,21 @@ export class QueryDto {
   @IsString()
   @IsOptional()
   threadId?: string;
+
+  @ApiPropertyOptional({
+    enum: ['audit', 'legal', 'compliance'],
+    default: 'audit',
+    description: 'Active application mode',
+  })
+  @IsIn(['audit', 'legal', 'compliance'])
+  @IsOptional()
+  mode?: 'audit' | 'legal' | 'compliance';
+
+  @ApiPropertyOptional({
+    default: false,
+    description: 'Force deep analysis via agentic loop + RLM',
+  })
+  @IsBoolean()
+  @IsOptional()
+  forceDeepAnalysis?: boolean;
 }

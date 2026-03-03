@@ -85,6 +85,8 @@ export class ChatService {
         engagementId: dto.engagementId,
         userRole: user.role,
         allowedEngagementIds: engagementIds,
+        mode: dto.mode || 'audit',
+        forceDeepAnalysis: dto.forceDeepAnalysis || false,
         runId,
       },
       {
