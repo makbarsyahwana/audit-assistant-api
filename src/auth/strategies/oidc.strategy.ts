@@ -15,18 +15,23 @@ export class OidcStrategy extends PassportStrategy(OpenIdConnectStrategy, 'oidc'
   private readonly logger = new Logger(OidcStrategy.name);
 
   constructor(private readonly configService: ConfigService) {
-    const issuer = configService.get<string>('oidc.issuer', '');
+    const issuer =
+      configService.get<string>('oidc.issuer') || 'http://localhost/oidc-disabled';
+    const clientID =
+      configService.get<string>('oidc.clientId') || 'oidc-disabled';
+    const clientSecret =
+      configService.get<string>('oidc.clientSecret') || 'oidc-disabled';
+    const callbackURL =
+      configService.get<string>('oidc.callbackUrl') || 'http://localhost/oidc/callback';
     super({
       issuer,
       authorizationURL: `${issuer}/authorize`,
       tokenURL: `${issuer}/oauth/token`,
       userInfoURL: `${issuer}/userinfo`,
-      clientID: configService.get<string>('oidc.clientId', ''),
-      clientSecret: configService.get<string>('oidc.clientSecret', ''),
-      callbackURL: configService.get<string>('oidc.callbackUrl', ''),
-      scope: configService
-        .get<string>('oidc.scope', 'openid profile email')
-        .split(' '),
+      clientID,
+      clientSecret,
+      callbackURL,
+      scope: (configService.get<string>('oidc.scope') || 'openid profile email').split(' '),
     });
   }
 

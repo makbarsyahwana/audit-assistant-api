@@ -26,15 +26,18 @@ export class SamlStrategy extends PassportStrategy(PassportSamlStrategy, 'saml')
   private readonly logger = new Logger(SamlStrategy.name);
 
   constructor(private readonly configService: ConfigService) {
-    const entryPoint = configService.get<string>('saml.entryPoint', '');
+    const entryPoint =
+      configService.get<string>('saml.entryPoint') || 'http://localhost/saml-disabled';
+    const callbackURL =
+      configService.get<string>('saml.callbackUrl') || 'http://localhost/saml/callback';
     super({
-      issuer: configService.get<string>('saml.issuer', 'audit-assistant'),
+      issuer: configService.get<string>('saml.issuer') || 'audit-assistant',
       authorizationURL: entryPoint,
       tokenURL: entryPoint,
       userInfoURL: entryPoint,
-      clientID: configService.get<string>('saml.issuer', 'audit-assistant'),
+      clientID: configService.get<string>('saml.issuer') || 'audit-assistant',
       clientSecret: 'saml-placeholder',
-      callbackURL: configService.get<string>('saml.callbackUrl', ''),
+      callbackURL,
       scope: ['openid'],
     });
   }
