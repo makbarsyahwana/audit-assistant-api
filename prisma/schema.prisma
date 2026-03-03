@@ -41,6 +41,7 @@ enum Role {
 model Engagement {
   id          String           @id @default(uuid())
   name        String
+  mode        AppMode          @default(AUDIT)
   status      EngagementStatus @default(PLANNING)
   entityId    String?          @map("entity_id")
   closedAt    DateTime?        @map("closed_at")
@@ -60,6 +61,12 @@ model Engagement {
   auditEvents    AuditEvent[]
 
   @@map("engagements")
+}
+
+enum AppMode {
+  AUDIT
+  LEGAL
+  COMPLIANCE
 }
 
 enum EngagementStatus {
@@ -158,6 +165,13 @@ enum DocType {
   EVIDENCE
   REPORT
   TICKET
+  CONTRACT
+  BRIEF
+  PRECEDENT
+  PLEADING
+  REGULATION
+  OBLIGATION
+  GUIDANCE
   OTHER
 }
 
