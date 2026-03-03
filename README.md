@@ -32,11 +32,25 @@ Backend API service for the AI Audit Assistant — orchestration, authentication
 - **Findings**: CRUD with RAG-powered criteria auto-suggestion
 
 ### Phase 3 — Production Hardening
-- **SSO**: OIDC/SAML integration
+- **SSO**: OIDC/SAML integration (with defensive fallback when not configured)
 - **Groups**: central role/group management
 - **Secrets**: key rotation and secrets management
 - **Rate Limiting**: throttle guard with configurable TTL/limit
 - **Engagement Lifecycle**: create/close/archive with audit events
+
+### Phase 4 — Agentic RAG + Deep Analysis
+- **Agentic RAG Loop**: planner → tool execution → critic evaluation subgraph
+- **RLM Tool**: deep-analysis via Recursive Language Model engine
+- **Multi-Model Tier Routing**: small/mid/frontier model selection per node
+- **Frontier Synthesis**: polishes complex query output using frontier-tier model
+- **Query Complexity Classification**: routes simple vs complex queries
+
+### Phase 5 — Multi-Mode Platform
+- **AppMode**: Prisma enum (AUDIT / LEGAL / COMPLIANCE) on Engagement model
+- **Mode-Aware Chat**: mode + forceDeepAnalysis passed through LangGraph state
+- **Mode-Filtered Engagements**: optional mode query parameter on GET /engagements
+- **Expanded DocType**: legal (contract, brief, precedent, pleading) + compliance (regulation, obligation, guidance)
+- **Mode-Aware Synthesis**: adapts synthesis prompt for audit/legal/compliance audience
 
 ## Getting Started
 
@@ -77,12 +91,19 @@ Once running, visit [http://localhost:8000/docs](http://localhost:8000/docs) for
 ```
 src/
 ├── auth/                # JWT + OIDC/SAML strategies, guards, CASL
+│   └── strategies/      # jwt, local, oidc, saml strategies
 ├── users/               # User CRUD
-├── engagements/         # Engagement & member management
-├── chat/                # LangGraph.js agent invocation
+├── engagements/         # Engagement & member management (mode-filtered)
+├── chat/                # LangGraph.js agent invocation (mode + forceDeepAnalysis)
 ├── agents/              # LangGraph.js graph definitions
+│   ├── audit-query.graph.ts       # Main graph (simple vs complex routing)
+│   └── agentic-loop.subgraph.ts   # Planner → tools → critic loop
 ├── nodes/               # Agent graph nodes
-├── state/               # Agent state schemas (Zod + Annotation)
+│   ├── synthesize.node.ts         # 🔴 Frontier polish (mode-aware)
+│   ├── planner.node.ts            # 🟡 Mid-tier planner
+│   ├── critic.node.ts             # 🟡 Mid-tier critic
+│   └── tools/                     # retrieve-tool, rlm-tool, entity-graph-tool
+├── state/               # Agent state (incl. mode, forceDeepAnalysis, complexity)
 ├── memory/              # PostgresSaver + PostgresStore
 ├── documents/           # Document management
 ├── requirements/        # Requirement CRUD
@@ -94,9 +115,13 @@ src/
 ├── groups/              # Group & membership management
 ├── secrets/             # Key rotation & secrets
 ├── audit-trail/         # Query logs & retrieval events
-├── rag-client/          # HTTP client to audit-rag-engine
+├── rag-client/          # HTTP client to audit-rag-engine (passes app_mode)
+├── policy/              # RBAC/ABAC engine + CASL
 ├── prisma/              # PrismaService & schema
-├── config/              # Configuration & env validation
+├── config/
+│   ├── configuration.ts         # Env validation
+│   ├── redis.config.ts          # Redis config
+│   └── model-tiers.config.ts    # 🟢🟡🔴 Model tier routing
 ├── common/
 │   ├── filters/         # Exception filters
 │   ├── guards/          # Throttle, roles guards
@@ -104,7 +129,7 @@ src/
 ├── app.module.ts        # Root module
 └── main.ts              # Bootstrap, Swagger, CORS
 prisma/
-├── schema.prisma        # Database schema
+├── schema.prisma        # Database schema (AppMode enum, expanded DocType)
 └── seed.ts              # Development seed data
 ```
 
