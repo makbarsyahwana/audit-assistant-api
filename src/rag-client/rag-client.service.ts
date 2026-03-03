@@ -9,6 +9,7 @@ export interface RetrieveRequest {
   mode?: 'vector' | 'fulltext' | 'graph' | 'graph_vector' | 'hybrid';
   filters?: Record<string, unknown>;
   topK?: number;
+  appMode?: string;
 }
 
 export interface RetrieveResponse {
@@ -34,6 +35,38 @@ export interface GenerateRequest {
   query: string;
   context: RetrieveResponse;
   systemPrompt?: string;
+}
+
+// ---------------------------------------------------------------------------
+// RLM Execute types
+// ---------------------------------------------------------------------------
+
+export interface RlmExecuteRequest {
+  query: string;
+  engagementId: string;
+  context?: string;
+  maxIterations?: number;
+  maxDepth?: number;
+  maxSubCalls?: number;
+  appMode?: string;
+}
+
+export interface RlmIteration {
+  iteration: number;
+  code: string;
+  stdoutMeta: string;
+  stateSnapshot: Record<string, unknown>;
+  error?: string;
+}
+
+export interface RlmExecuteResponse {
+  status: 'completed' | 'max_iterations' | 'error';
+  answer: string;
+  iterations: RlmIteration[];
+  iterationsUsed: number;
+  maxDepthReached: number;
+  totalSubCalls: number;
+  error?: string;
 }
 
 export interface GenerateResponse {
@@ -77,6 +110,7 @@ export class RagClientService {
           engagement_id: request.engagementId,
           filters: request.filters,
           top_k: request.topK || 10,
+          app_mode: request.appMode || 'audit',
         },
       ),
     );
@@ -93,10 +127,37 @@ export class RagClientService {
         query: request.query,
         context: request.context,
         system_prompt: request.systemPrompt,
+        app_mode: (request as any).appMode || 'audit',
       }),
     );
 
     this.logger.debug(`Generated answer with confidence=${data.confidence}`);
+    return data;
+  }
+
+  async rlmExecute(request: RlmExecuteRequest): Promise<RlmExecuteResponse> {
+    this.logger.debug(
+      `RLM execute for query: "${request.query}" engagement=${request.engagementId}`,
+    );
+
+    const { data } = await firstValueFrom(
+      this.httpService.post<RlmExecuteResponse>(
+        `${this.baseUrl}/rlm/execute`,
+        {
+          query: request.query,
+          engagement_id: request.engagementId,
+          context: request.context,
+          max_iterations: request.maxIterations,
+          max_depth: request.maxDepth,
+          max_sub_calls: request.maxSubCalls,
+          app_mode: request.appMode || 'audit',
+        },
+      ),
+    );
+
+    this.logger.debug(
+      `RLM result: status=${data.status} iterations=${data.iterationsUsed}`,
+    );
     return data;
   }
 
