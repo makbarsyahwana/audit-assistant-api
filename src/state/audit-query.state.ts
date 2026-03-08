@@ -59,6 +59,18 @@ export const AuditQueryState = Annotation.Root({
     default: () => '',
   }),
 
+  // Active application mode (audit | legal | compliance)
+  mode: Annotation<string>({
+    reducer: (_prev, next) => next,
+    default: () => 'audit',
+  }),
+
+  // Force deep analysis via agentic loop + RLM
+  forceDeepAnalysis: Annotation<boolean>({
+    reducer: (_prev, next) => next,
+    default: () => false,
+  }),
+
   // User's role for policy checks
   userRole: Annotation<string>({
     reducer: (_prev, next) => next,
@@ -155,6 +167,76 @@ export const AuditQueryState = Annotation.Root({
   guardrailMessage: Annotation<string>({
     reducer: (_prev, next) => next,
     default: () => '',
+  }),
+
+  // ---------------------------------------------------------------------------
+  // Agentic RAG + RLM fields
+  // ---------------------------------------------------------------------------
+
+  // Query complexity classification (simple = existing path, complex = agentic loop)
+  complexity: Annotation<'simple' | 'complex'>({
+    reducer: (_prev, next) => next,
+    default: () => 'simple',
+  }),
+
+  // RLM execution trace (iterations from the RLM engine)
+  rlmIterations: Annotation<number>({
+    reducer: (_prev, next) => next,
+    default: () => 0,
+  }),
+
+  rlmSubCalls: Annotation<number>({
+    reducer: (_prev, next) => next,
+    default: () => 0,
+  }),
+
+  rlmTrace: Annotation<
+    Array<{ iteration: number; code: string; stdoutMeta: string }>
+  >({
+    reducer: (_prev, next) => next,
+    default: () => [],
+  }),
+
+  // Planner decisions in the agentic loop
+  planningSteps: Annotation<
+    Array<{
+      action: string;
+      reasoning: string;
+      query: string;
+      estimatedCompleteness: number;
+      timestamp: string;
+    }>
+  >({
+    reducer: (prev, next) => [...prev, ...next],
+    default: () => [],
+  }),
+
+  // Results from tool invocations in the agentic loop
+  toolResults: Annotation<
+    Array<{ tool: string; result: string; score: number }>
+  >({
+    reducer: (prev, next) => [...prev, ...next],
+    default: () => [],
+  }),
+
+  // Critic evaluations after each tool execution
+  criticEvaluations: Annotation<
+    Array<{
+      sufficient: boolean;
+      groundednessScore: number;
+      completenessScore: number;
+      reason: string;
+      nextAction: string;
+    }>
+  >({
+    reducer: (prev, next) => [...prev, ...next],
+    default: () => [],
+  }),
+
+  // Number of agentic loop iterations completed
+  agenticIterations: Annotation<number>({
+    reducer: (_prev, next) => next,
+    default: () => 0,
   }),
 });
 
