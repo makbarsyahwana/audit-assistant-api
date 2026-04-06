@@ -143,6 +143,7 @@ model Document {
   entityId            String?         @map("entity_id")
   periodStart         DateTime?       @map("period_start")
   periodEnd           DateTime?       @map("period_end")
+  corpusScope         CorpusScope     @default(ENGAGEMENT) @map("corpus_scope")
   confidentiality     Confidentiality @default(INTERNAL)
   ingestionStatus     IngestionStatus @default(PENDING) @map("ingestion_status")
   ragDocumentId       String?         @map("rag_document_id")
@@ -173,6 +174,11 @@ enum DocType {
   OBLIGATION
   GUIDANCE
   OTHER
+}
+
+enum CorpusScope {
+  GLOBAL       // External — shared across all engagements/clients
+  ENGAGEMENT   // Internal — scoped to a single engagement
 }
 
 enum Confidentiality {
