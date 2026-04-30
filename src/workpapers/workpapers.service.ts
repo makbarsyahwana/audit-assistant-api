@@ -107,19 +107,16 @@ export class WorkpapersService {
 
     const query = queryParts.join('\n');
 
-    // Retrieve relevant context
-    const context = await this.ragClient.retrieve({
+    // Generate draft using RAG engine. Retrieval happens server-side.
+    // The workpaper-template system prompt used to be sent here, but Python
+    // `/generate` builds its own prompt via `prompt_router`; the field was
+    // silently dropped. Template-specific prompting now belongs in the
+    // engine's prompt_router rather than this caller.
+    const result = await this.ragClient.generate({
       query,
       engagementId: wp.engagementId,
       mode: 'hybrid',
       topK: 15,
-    });
-
-    // Generate draft using RAG engine
-    const result = await this.ragClient.generate({
-      query,
-      context,
-      systemPrompt: this.getWorkpaperSystemPrompt(wp.templateType),
     });
 
     // Update workpaper with draft

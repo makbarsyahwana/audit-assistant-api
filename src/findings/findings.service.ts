@@ -103,17 +103,11 @@ export class FindingsService {
 
     const query = `Find the framework criteria and requirements related to: ${finding.title}`;
 
-    const context = await this.ragClient.retrieve({
+    const result = await this.ragClient.generate({
       query,
       engagementId: finding.engagementId,
       mode: 'hybrid',
       topK: 10,
-    });
-
-    const result = await this.ragClient.generate({
-      query,
-      context,
-      systemPrompt: `You are an audit finding criteria assistant. Given the finding title and context, suggest the most relevant framework criteria (clause references, standard requirements) that apply. Format each criterion with its source reference using [CITE:chunk_id] format.`,
     });
 
     return {
