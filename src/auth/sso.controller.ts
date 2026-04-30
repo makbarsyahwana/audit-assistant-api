@@ -1,7 +1,6 @@
 import {
   Controller,
   Get,
-  Post,
   UseGuards,
   Request,
   Response,
@@ -38,22 +37,6 @@ export class SsoController {
     return this.handleSsoCallback(req, res);
   }
 
-  // ─── SAML ──────────────────────────────────────────────────────────
-
-  @Get('saml')
-  @ApiOperation({ summary: 'Initiate SAML SSO login' })
-  @UseGuards(AuthGuard('saml'))
-  samlLogin() {
-    // Passport redirects to IdP
-  }
-
-  @Post('saml/callback')
-  @ApiExcludeEndpoint()
-  @UseGuards(AuthGuard('saml'))
-  async samlCallback(@Request() req: any, @Response() res: any) {
-    return this.handleSsoCallback(req, res);
-  }
-
   // ─── SSO status ────────────────────────────────────────────────────
 
   @Get('sso/status')
@@ -63,10 +46,6 @@ export class SsoController {
       oidc: {
         enabled: this.configService.get<boolean>('oidc.enabled', false),
         loginUrl: '/auth/oidc',
-      },
-      saml: {
-        enabled: this.configService.get<boolean>('saml.enabled', false),
-        loginUrl: '/auth/saml',
       },
     };
   }

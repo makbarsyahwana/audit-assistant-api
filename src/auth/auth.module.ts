@@ -8,7 +8,6 @@ import { SsoController } from './sso.controller';
 import { SsoService } from './sso.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { OidcStrategy } from './strategies/oidc.strategy';
-import { SamlStrategy } from './strategies/saml.strategy';
 
 @Module({
   imports: [
@@ -33,7 +32,6 @@ import { SamlStrategy } from './strategies/saml.strategy';
     SsoService,
     JwtStrategy,
     OidcStrategy,
-    SamlStrategy,
   ],
   exports: [AuthService, SsoService, JwtModule],
 })

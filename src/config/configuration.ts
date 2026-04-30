@@ -59,18 +59,6 @@ export default () => ({
     groupsClaim: process.env.OIDC_GROUPS_CLAIM || 'groups',
   },
 
-  // Phase 3: SSO / SAML
-  saml: {
-    enabled: process.env.SAML_ENABLED === 'true',
-    entryPoint: process.env.SAML_ENTRY_POINT || '',
-    issuer: process.env.SAML_ISSUER || 'audit-assistant',
-    cert: process.env.SAML_CERT || '',
-    callbackUrl:
-      process.env.SAML_CALLBACK_URL || 'http://localhost:8000/auth/saml/callback',
-    roleAttribute: process.env.SAML_ROLE_ATTRIBUTE || 'Role',
-    groupAttribute: process.env.SAML_GROUP_ATTRIBUTE || 'Group',
-  },
-
   // Phase 3: Rate limiting
   throttle: {
     ttl: parseInt(process.env.THROTTLE_TTL || '60', 10),
