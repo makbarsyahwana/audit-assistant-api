@@ -1,4 +1,4 @@
-import { PrismaClient, Role, EngagementStatus } from '@prisma/client';
+import { PrismaClient, Role, EngagementStatus, AppMode } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -47,6 +47,20 @@ async function main() {
     },
   });
   console.log(`  Auditor user: ${auditor.email} (id: ${auditor.id})`);
+
+  // Create __global__ system engagement (container for external/shared knowledge base)
+  await prisma.engagement.upsert({
+    where: { id: '__global__' },
+    update: {},
+    create: {
+      id: '__global__',
+      name: 'Global Knowledge Base',
+      mode: AppMode.AUDIT,
+      status: EngagementStatus.ACTIVE,
+      entityId: 'system',
+    },
+  });
+  console.log('  System engagement: __global__ (external knowledge base)');
 
   // Create sample engagement
   const engagement = await prisma.engagement.upsert({

@@ -1,8 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { CorpusScope } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { RagClientService } from '../rag-client/rag-client.service';
 import { CreateDocumentDto } from './dto/create-document.dto';
 import { UpdateDocumentDto } from './dto/update-document.dto';
+
+const GLOBAL_ENGAGEMENT_ID = '__global__';
 
 @Injectable()
 export class DocumentsService {
@@ -12,9 +15,12 @@ export class DocumentsService {
   ) {}
 
   async create(dto: CreateDocumentDto, uploadedById?: string) {
+    const isGlobal = dto.corpusScope === CorpusScope.GLOBAL;
+    const engagementId = isGlobal ? GLOBAL_ENGAGEMENT_ID : (dto.engagementId ?? GLOBAL_ENGAGEMENT_ID);
     return this.prisma.document.create({
       data: {
-        engagementId: dto.engagementId,
+        engagementId,
+        corpusScope: dto.corpusScope ?? CorpusScope.ENGAGEMENT,
         title: dto.title,
         docType: dto.docType,
         sourceSystem: dto.sourceSystem,
@@ -36,17 +42,19 @@ export class DocumentsService {
 
   async findAll(params: {
     engagementId?: string;
+    corpusScope?: CorpusScope;
     docType?: string;
     framework?: string;
     search?: string;
     page?: number;
     limit?: number;
   }) {
-    const { engagementId, docType, framework, search, page = 1, limit = 20 } = params;
+    const { engagementId, corpusScope, docType, framework, search, page = 1, limit = 20 } = params;
     const skip = (page - 1) * limit;
 
     const where: Record<string, unknown> = {};
     if (engagementId) where.engagementId = engagementId;
+    if (corpusScope) where.corpusScope = corpusScope;
     if (docType) where.docType = docType;
     if (framework) where.framework = framework;
     if (search) {

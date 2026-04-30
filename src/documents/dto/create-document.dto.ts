@@ -7,12 +7,18 @@ import {
   IsObject,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { DocType, Confidentiality } from '@prisma/client';
+import { DocType, Confidentiality, CorpusScope } from '@prisma/client';
 
 export class CreateDocumentDto {
-  @ApiProperty({ example: 'engagement-uuid' })
+  @ApiPropertyOptional({ example: 'engagement-uuid', description: 'Required for ENGAGEMENT scope; omit for GLOBAL scope' })
   @IsString()
-  engagementId: string;
+  @IsOptional()
+  engagementId?: string;
+
+  @ApiPropertyOptional({ enum: CorpusScope, default: CorpusScope.ENGAGEMENT })
+  @IsEnum(CorpusScope)
+  @IsOptional()
+  corpusScope?: CorpusScope;
 
   @ApiProperty({ example: 'ISO 27001 Framework Document' })
   @IsString()

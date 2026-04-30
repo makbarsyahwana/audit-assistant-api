@@ -11,10 +11,14 @@ import {
   Request,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { CorpusScope } from '@prisma/client';
 import { DocumentsService } from './documents.service';
 import { CreateDocumentDto } from './dto/create-document.dto';
 import { UpdateDocumentDto } from './dto/update-document.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { Role } from '@prisma/client';
 
 @ApiTags('documents')
 @Controller('documents')
@@ -32,6 +36,7 @@ export class DocumentsController {
   @Get()
   @ApiOperation({ summary: 'List documents with filters' })
   @ApiQuery({ name: 'engagementId', required: false })
+  @ApiQuery({ name: 'corpusScope', required: false, enum: CorpusScope })
   @ApiQuery({ name: 'docType', required: false })
   @ApiQuery({ name: 'framework', required: false })
   @ApiQuery({ name: 'search', required: false })
@@ -39,6 +44,7 @@ export class DocumentsController {
   @ApiQuery({ name: 'limit', required: false, type: Number })
   findAll(
     @Query('engagementId') engagementId?: string,
+    @Query('corpusScope') corpusScope?: CorpusScope,
     @Query('docType') docType?: string,
     @Query('framework') framework?: string,
     @Query('search') search?: string,
@@ -47,6 +53,7 @@ export class DocumentsController {
   ) {
     return this.documentsService.findAll({
       engagementId,
+      corpusScope,
       docType,
       framework,
       search,
@@ -70,6 +77,27 @@ export class DocumentsController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete document' })
   remove(@Param('id') id: string) {
+    return this.documentsService.remove(id);
+  }
+
+  // ── Admin-only: External Knowledge Base ─────────────────────────────────
+
+  @Post('global')
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Upload a document to the global knowledge base (admin only)' })
+  createGlobal(@Body() dto: CreateDocumentDto, @Request() req: any) {
+    return this.documentsService.create(
+      { ...dto, corpusScope: CorpusScope.GLOBAL },
+      req.user.id,
+    );
+  }
+
+  @Delete('global/:id')
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Delete a document from the global knowledge base (admin only)' })
+  removeGlobal(@Param('id') id: string) {
     return this.documentsService.remove(id);
   }
 }
