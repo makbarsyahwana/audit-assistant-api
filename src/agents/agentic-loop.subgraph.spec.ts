@@ -6,6 +6,10 @@
  * based on state, making them ideal for unit testing.
  */
 import { AuditQueryStateType } from '../state/audit-query.state';
+import {
+  routeFromPlanner,
+  routeFromCritic,
+} from './agentic-loop.subgraph';
 
 function makeState(overrides: Partial<AuditQueryStateType> = {}): AuditQueryStateType {
   return {
@@ -25,6 +29,7 @@ function makeState(overrides: Partial<AuditQueryStateType> = {}): AuditQueryStat
     explanation: '',
     runId: 'run-1',
     agentSteps: [],
+    error: '',
     guardrailPassed: true,
     guardrailMessage: '',
     complexity: 'complex',
@@ -35,54 +40,10 @@ function makeState(overrides: Partial<AuditQueryStateType> = {}): AuditQueryStat
     toolResults: [],
     criticEvaluations: [],
     agenticIterations: 0,
+    mode: 'audit',
+    forceDeepAnalysis: false,
     ...overrides,
   } as AuditQueryStateType;
-}
-
-// Re-implement the routing functions here to test them in isolation
-// (since they're not exported from the module)
-function routeFromPlanner(state: AuditQueryStateType): string {
-  const lastPlan =
-    state.planningSteps.length > 0
-      ? state.planningSteps[state.planningSteps.length - 1]
-      : null;
-
-  if (!lastPlan) return 'retrieveTool';
-
-  switch (lastPlan.action) {
-    case 'retrieve':
-      return 'retrieveTool';
-    case 'rlm_deep':
-      return 'rlmTool';
-    case 'entity_graph':
-      return 'entityGraphTool';
-    case 'answer':
-    case 'stop':
-      return 'generate';
-    default:
-      return 'retrieveTool';
-  }
-}
-
-function routeFromCritic(state: AuditQueryStateType): string {
-  const MAX_AGENTIC_ITERATIONS = 5;
-
-  const lastCritic =
-    state.criticEvaluations.length > 0
-      ? state.criticEvaluations[state.criticEvaluations.length - 1]
-      : null;
-
-  if (state.agenticIterations >= MAX_AGENTIC_ITERATIONS) {
-    return 'generate';
-  }
-
-  if (!lastCritic) return 'planner';
-
-  if (lastCritic.sufficient || lastCritic.nextAction === 'answer') {
-    return 'generate';
-  }
-
-  return 'planner';
 }
 
 describe('Agentic Loop Routing', () => {

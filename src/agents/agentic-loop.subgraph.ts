@@ -13,7 +13,7 @@ import { RagClientService } from '../rag-client/rag-client.service';
 // ---------------------------------------------------------------------------
 
 /** Maximum number of planner → tool → critic iterations before forced exit. */
-const MAX_AGENTIC_ITERATIONS = 5;
+export const MAX_AGENTIC_ITERATIONS = 5;
 
 // ---------------------------------------------------------------------------
 // Routing functions
@@ -26,7 +26,7 @@ const MAX_AGENTIC_ITERATIONS = 5;
  * If the planner decides "answer" or "stop", we route to the generate
  * node (which produces the final answer from accumulated context).
  */
-function routeFromPlanner(state: AuditQueryStateType): string {
+export function routeFromPlanner(state: AuditQueryStateType): string {
   const lastPlan =
     state.planningSteps.length > 0
       ? state.planningSteps[state.planningSteps.length - 1]
@@ -57,7 +57,7 @@ function routeFromPlanner(state: AuditQueryStateType): string {
  * 2. Max agentic iterations reached
  * 3. Critic suggests "answer" as next action
  */
-function routeFromCritic(state: AuditQueryStateType): string {
+export function routeFromCritic(state: AuditQueryStateType): string {
   const lastCritic =
     state.criticEvaluations.length > 0
       ? state.criticEvaluations[state.criticEvaluations.length - 1]
@@ -65,6 +65,18 @@ function routeFromCritic(state: AuditQueryStateType): string {
 
   // Safety: stop if max iterations reached
   if (state.agenticIterations >= MAX_AGENTIC_ITERATIONS) {
+    return 'generate';
+  }
+
+  // Early exit: if we've iterated at least once but every tool returned no
+  // useful results (all scores ≤ 0), further loops won't help — exit now
+  // instead of burning iterations on an empty corpus.
+  if (
+    state.agenticIterations > 0 &&
+    state.retrievedChunks.length === 0 &&
+    state.toolResults.length > 0 &&
+    state.toolResults.every((r) => r.score <= 0)
+  ) {
     return 'generate';
   }
 

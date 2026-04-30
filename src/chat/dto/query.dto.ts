@@ -1,4 +1,4 @@
-import { IsString, MinLength, IsOptional, IsUUID, IsIn, IsBoolean } from 'class-validator';
+import { IsString, MinLength, IsOptional, IsUUID, IsIn, IsBoolean, IsArray } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class QueryDto {
@@ -35,4 +35,13 @@ export class QueryDto {
   @IsBoolean()
   @IsOptional()
   forceDeepAnalysis?: boolean;
+
+  @ApiPropertyOptional({
+    type: [String],
+    description: 'IDs of external knowledge sources to include in retrieval context',
+  })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  knowledgeSourceIds?: string[];
 }
