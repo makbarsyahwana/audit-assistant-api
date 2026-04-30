@@ -66,8 +66,22 @@ export function createSynthesizeNode() {
   ): Promise<Partial<AuditQueryStateType>> {
     const startedAt = new Date().toISOString();
 
-    // Skip synthesis if no answer or simple query (shouldn't happen but guard)
-    if (!state.answer || state.complexity !== 'complex') {
+    // Skip synthesis for sentinel/fallback answers from the security pipeline
+    // (circuit breaker, kill switch, output guard). These should reach the
+    // user verbatim — polishing them would obscure the operational signal.
+    const SENTINEL_PREFIXES = [
+      'The AI generation service is temporarily unavailable',
+      'Generation disabled',
+      '[Output redacted by safety controls]',
+      'Access denied:',
+      'RLM execution halted by kill switch',
+    ];
+    const isSentinel = SENTINEL_PREFIXES.some((p) =>
+      state.answer.startsWith(p),
+    );
+
+    // Skip synthesis if no answer, simple query, or sentinel answer
+    if (!state.answer || state.complexity !== 'complex' || isSentinel) {
       return {
         agentSteps: [
           {
@@ -76,7 +90,11 @@ export function createSynthesizeNode() {
             completedAt: new Date().toISOString(),
             metadata: {
               skipped: true,
-              reason: !state.answer ? 'no_answer' : 'not_complex',
+              reason: !state.answer
+                ? 'no_answer'
+                : isSentinel
+                  ? 'sentinel_passthrough'
+                  : 'not_complex',
             },
           },
         ],

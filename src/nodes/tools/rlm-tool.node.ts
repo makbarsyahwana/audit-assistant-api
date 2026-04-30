@@ -36,17 +36,14 @@ export function createRlmToolNode(ragClient: RagClientService) {
         context,
       });
 
-      // Map RLM iterations to trace format
-      const rlmTrace = result.iterations.map((it) => ({
-        iteration: it.iteration,
-        code: it.code,
-        stdoutMeta: it.stdoutMeta,
-      }));
-
+      // The Python response no longer exposes iteration bodies at the top
+      // level; detailed iteration traces live inside `trace.iterations` and
+      // are not currently consumed by downstream nodes. Persist summary
+      // counters only.
       return {
         rlmIterations: result.iterationsUsed,
-        rlmSubCalls: result.totalSubCalls,
-        rlmTrace,
+        rlmSubCalls: result.subCallsUsed,
+        rlmTrace: [],
         toolResults: [
           {
             tool: 'rlm_deep',
@@ -68,7 +65,7 @@ export function createRlmToolNode(ragClient: RagClientService) {
               status: result.status,
               iterationsUsed: result.iterationsUsed,
               maxDepthReached: result.maxDepthReached,
-              totalSubCalls: result.totalSubCalls,
+              subCallsUsed: result.subCallsUsed,
               hasAnswer: !!result.answer,
             },
           },

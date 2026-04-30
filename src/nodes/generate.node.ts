@@ -1,5 +1,5 @@
 import { AuditQueryStateType } from '../state/audit-query.state';
-import { RagClientService } from '../rag-client/rag-client.service';
+import { GenerateRequest, RagClientService } from '../rag-client/rag-client.service';
 
 /**
  * Generate node — calls the RAG engine to produce an answer with citations.
@@ -29,12 +29,15 @@ export function createGenerateNode(ragClient: RagClientService) {
       };
     }
 
+    // NOTE: We intentionally do NOT re-send `state.retrievedChunks` here.
+    // The Python `/generate` route performs its own retrieval keyed off
+    // `engagement_id` + `mode`. Sending pre-fetched context used to be
+    // silently dropped server-side, causing a double retrieval per call.
     const result = await ragClient.generate({
       query: state.query,
-      context: {
-        chunks: state.retrievedChunks,
-        entities: state.retrievedEntities,
-      },
+      engagementId: state.engagementId,
+      mode: state.retrievalMode as GenerateRequest['mode'],
+      appMode: state.mode,
     });
 
     return {

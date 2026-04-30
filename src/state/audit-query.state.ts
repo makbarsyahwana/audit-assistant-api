@@ -158,6 +158,14 @@ export const AuditQueryState = Annotation.Root({
     default: () => [],
   }),
 
+  // Structured error state — populated by nodes that encounter failures so
+  // downstream nodes (guardrails, logAuditTrail) can surface the cause instead
+  // of letting unhandled exceptions bubble up as 500s.
+  error: Annotation<string>({
+    reducer: (_prev, next) => next,
+    default: () => '',
+  }),
+
   // Guardrail flags
   guardrailPassed: Annotation<boolean>({
     reducer: (_prev, next) => next,

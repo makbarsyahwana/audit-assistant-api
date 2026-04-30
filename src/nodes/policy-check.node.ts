@@ -33,8 +33,22 @@ export async function policyCheckNode(
   // Here we just verify the requested engagement is in the allowed list.
   const allowed = state.allowedEngagementIds.includes(engagementId);
 
+  const deniedAnswer =
+    'Access denied: you do not have permission to query this engagement. ' +
+    'Please contact your engagement administrator if you believe this is an error.';
+
   return {
     accessAllowed: allowed,
+    // Pre-populate user-facing fields for the denied path so the user does not
+    // receive an empty `answer` after the graph bypasses retrieval/generation.
+    ...(allowed
+      ? {}
+      : {
+          answer: deniedAnswer,
+          confidence: 0,
+          explanation: 'Blocked by policy check before retrieval.',
+          error: `access_denied:engagement=${engagementId}`,
+        }),
     agentSteps: [
       {
         node: 'policyCheck',
