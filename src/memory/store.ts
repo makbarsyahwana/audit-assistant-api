@@ -5,10 +5,14 @@ import { Logger } from '@nestjs/common';
 const logger = new Logger('MemoryStore');
 
 let storeInstance: any = null;
+let initPromise: Promise<any> | null = null;
 
 /**
  * Get or create a PostgresStore instance for long-term memory.
  * Namespace convention: ["memories", userId, engagementId]
+ *
+ * Uses a promise-based mutex so concurrent callers await the same
+ * initialization instead of racing to create duplicate instances.
  */
 export async function getMemoryStore(
   connectionString: string,
@@ -17,11 +21,17 @@ export async function getMemoryStore(
     return storeInstance;
   }
 
-  storeInstance = PostgresStore.fromConnString(connectionString);
-  await storeInstance.setup();
-  logger.log('PostgresStore (long-term memory) initialized');
+  if (!initPromise) {
+    initPromise = (async () => {
+      const store = PostgresStore.fromConnString(connectionString);
+      await store.setup();
+      storeInstance = store;
+      logger.log('PostgresStore (long-term memory) initialized');
+      return store;
+    })();
+  }
 
-  return storeInstance;
+  return initPromise;
 }
 
 /**
