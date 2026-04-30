@@ -33,8 +33,11 @@ export interface RetrieveResponse {
 
 export interface GenerateRequest {
   query: string;
-  context: RetrieveResponse;
-  systemPrompt?: string;
+  engagementId: string;
+  mode?: 'vector' | 'fulltext' | 'graph' | 'hybrid' | 'entity_vector' | 'graph_vector_fulltext' | 'auto';
+  topK?: number;
+  filters?: Record<string, unknown>;
+  appMode?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -54,18 +57,22 @@ export interface RlmExecuteRequest {
 export interface RlmIteration {
   iteration: number;
   code: string;
-  stdoutMeta: string;
-  stateSnapshot: Record<string, unknown>;
+  stdout: string;
+  stateChanges: Record<string, string>;
+  modelUsed?: string;
+  tokensUsed?: number;
+  durationMs?: number;
   error?: string;
 }
 
 export interface RlmExecuteResponse {
-  status: 'completed' | 'max_iterations' | 'error';
+  status: 'completed' | 'max_iterations' | 'error' | 'killed' | 'timeout';
   answer: string;
-  iterations: RlmIteration[];
   iterationsUsed: number;
+  subCallsUsed: number;
+  totalTokens: number;
   maxDepthReached: number;
-  totalSubCalls: number;
+  durationMs?: number;
   error?: string;
 }
 
@@ -77,9 +84,17 @@ export interface GenerateResponse {
     documentName?: string;
     pageNumber?: number;
     excerpt: string;
+    score?: number;
   }>;
   confidence: number;
+  explanation?: string;
+  retrievalMode?: string;
+  chunksRetrieved?: number;
+  latencyMs?: number;
+  abstained?: boolean;
   model: string;
+  promptTokens?: number;
+  completionTokens?: number;
 }
 
 @Injectable()
@@ -123,11 +138,13 @@ export class RagClientService {
     this.logger.debug(`Generating answer for query: "${request.query}"`);
 
     const { data } = await firstValueFrom(
-      this.httpService.post<GenerateResponse>(`${this.baseUrl}/generate`, {
+      this.httpService.post<GenerateResponse>(`${this.baseUrl}/generate/`, {
         query: request.query,
-        context: request.context,
-        system_prompt: request.systemPrompt,
-        app_mode: (request as any).appMode || 'audit',
+        engagement_id: request.engagementId,
+        mode: request.mode,
+        top_k: request.topK ?? 10,
+        filters: request.filters,
+        app_mode: request.appMode || 'audit',
       }),
     );
 
