@@ -1,4 +1,5 @@
 import { queryRouterNode } from './query-router.node';
+import { classifyRetrievalMode } from './retrieval-mode-classifier';
 import { AuditQueryStateType } from '../state/audit-query.state';
 
 function makeState(overrides: Partial<AuditQueryStateType> = {}): AuditQueryStateType {
@@ -111,5 +112,35 @@ describe('queryRouterNode', () => {
     expect(result.agentSteps![0].node).toBe('queryRouter');
     expect(result.agentSteps![0].metadata).toHaveProperty('complexity');
     expect(result.agentSteps![0].metadata).toHaveProperty('complexityScore');
+  });
+});
+
+describe('classifyRetrievalMode (direct)', () => {
+  it('should return fulltext for clause references', () => {
+    expect(classifyRetrievalMode('What does clause 4.2 say?')).toBe('fulltext');
+  });
+
+  it('should return fulltext for ISO queries', () => {
+    expect(classifyRetrievalMode('ISO 27001 requirements')).toBe('fulltext');
+  });
+
+  it('should return fulltext for control id queries', () => {
+    expect(classifyRetrievalMode('Show me control id AC-01')).toBe('fulltext');
+  });
+
+  it('should return graph_vector for relationship queries', () => {
+    expect(classifyRetrievalMode('What entities are related to payroll?')).toBe('graph_vector');
+  });
+
+  it('should return graph_vector for "connected to" queries', () => {
+    expect(classifyRetrievalMode('What processes are connected to billing?')).toBe('graph_vector');
+  });
+
+  it('should return fulltext for short queries', () => {
+    expect(classifyRetrievalMode('audit risk')).toBe('fulltext');
+  });
+
+  it('should return hybrid for general queries', () => {
+    expect(classifyRetrievalMode('How should we approach the financial audit for Q3?')).toBe('hybrid');
   });
 });

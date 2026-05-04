@@ -30,6 +30,7 @@ import { ExportsModule } from './exports/exports.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { EnumLowercaseInterceptor } from './common/interceptors/enum-lowercase.interceptor';
 import { ThrottleBehindAuthGuard } from './common/guards/throttle-behind-auth.guard';
 
 @Module({
@@ -86,6 +87,10 @@ import { ThrottleBehindAuthGuard } from './common/guards/throttle-behind-auth.gu
     {
       provide: APP_INTERCEPTOR,
       useClass: LoggingInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: EnumLowercaseInterceptor,
     },
     {
       provide: APP_GUARD,

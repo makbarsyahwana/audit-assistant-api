@@ -1,4 +1,5 @@
 import { AuditQueryStateType } from '../state/audit-query.state';
+import { classifyRetrievalMode } from './retrieval-mode-classifier';
 
 // ---------------------------------------------------------------------------
 // Complexity classification heuristics
@@ -60,40 +61,6 @@ function scoreComplexity(query: string): number {
   if (sentenceCount >= 3) score += 1;
   if (query.length > 200) score += 1;
   return score;
-}
-
-// ---------------------------------------------------------------------------
-// Retrieval mode classification (existing logic, unchanged)
-// ---------------------------------------------------------------------------
-
-function classifyRetrievalMode(query: string): string {
-  const q = query.toLowerCase();
-
-  if (
-    q.includes('clause') ||
-    q.includes('section') ||
-    q.match(/\b\d+\.\d+/) ||
-    q.includes('iso') ||
-    q.includes('control id')
-  ) {
-    return 'fulltext';
-  }
-
-  if (
-    q.includes('relationship') ||
-    q.includes('connected to') ||
-    q.includes('related to') ||
-    q.includes('entity') ||
-    q.includes('who owns')
-  ) {
-    return 'graph_vector';
-  }
-
-  if (q.length < 20) {
-    return 'fulltext';
-  }
-
-  return 'hybrid';
 }
 
 // ---------------------------------------------------------------------------
